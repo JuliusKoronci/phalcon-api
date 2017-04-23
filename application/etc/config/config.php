@@ -41,9 +41,7 @@ return [
         'weight' => getenv('MEMCACHED_WEIGHT'),
     ],
     'logger' => [
-        'defaultFilename' => getenv('LOGGER_DEFAULT_FILENAME'),
-        'format' => getenv('LOGGER_FORMAT'),
-        'level' => getenv('LOGGER_LEVEL'),
+        'path' => APP_PATH . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'logs',
     ],
     'google' => [
         'analytics' => getenv('GOOGLE_ANALYTICS'),

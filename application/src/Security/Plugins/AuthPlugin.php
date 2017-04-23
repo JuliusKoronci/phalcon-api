@@ -2,11 +2,11 @@
 
 namespace Application\Security\Plugins;
 
+use Igsem\ApiExceptions\Exceptions\TokenException;
 use Application\Security\Utils\Firewall;
 use Application\Security\Utils\JWT;
 use Phalcon\Events\Event;
 use Phalcon\Mvc\Micro;
-use Phalcon\Mvc\Micro\MiddlewareInterface;
 use Phalcon\Mvc\User\Plugin;
 
 /**
@@ -23,9 +23,19 @@ class AuthPlugin extends Plugin
         $firewall = new Firewall($this->di);
         $jwt = new JWT($this->di);
         if ($firewall->shouldSecure($path)) {
-            return $jwt->isValid($app->request->getHeader('Authorization'));
+            $this->handleSecurityCheck($jwt, $app);
         }
 
         return true;
+    }
+
+    private function handleSecurityCheck($jwt, $app)
+    {
+        $secure = $jwt->isValid($app->request->getHeader('Authorization'));
+        if (!$secure) {
+            throw new TokenException(null, null, null, [
+                'context' => 'Thrown in Auth plugin while validating JWT'
+            ]);
+        }
     }
 }

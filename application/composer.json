@@ -30,7 +30,8 @@
   },
   "autoload": {
     "psr-4": {
-      "Application\\": "src/"
+      "Application\\": "src/",
+      "Igsem\\": "Igsem/"
     }
   },
   "require": {
@@ -43,6 +44,7 @@
     "swiftmailer/swiftmailer": "^5.4",
     "zircote/swagger-php": "^2.0",
     "igsem/phalcon-swagger": "^0.0.2",
+    "igsem/api-exceptions": "^0.0.1",
     "firebase/php-jwt": "^4.0"
   },
   "require-dev": {

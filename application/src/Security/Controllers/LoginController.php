@@ -47,6 +47,8 @@ class LoginController extends Controller
      */
     public function loginAction()
     {
-        return 'login';
+        $email = $this->request->getPost('email');
+        $password = $this->request->getPost('password');
+        return $email . $password;
     }
 }

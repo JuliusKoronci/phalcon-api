@@ -5,13 +5,12 @@ use Phalcon\Cache\Frontend\Data as PhCacheFrontData;
 use Phalcon\Config as PhConfig;
 use Phalcon\Di as PhDI;
 use Phalcon\Di\FactoryDefault as PhFactoryDefault;
-use Phalcon\Logger\Adapter\File as PhFileLogger;
-use Phalcon\Logger\Formatter\Line as PhLoggerFormatter;
 use Phalcon\Mvc\Application as PhApplication;
 use Phalcon\Mvc\Micro as PhMicro;
 use Phalcon\Mvc\Micro\Collection as PhMicroCollection;
 use Phalcon\Registry as PhRegistry;
-
+use Igsem\ApiExceptions\Loggers\PhalconLogger;
+use Igsem\ApiExceptions\ApiExceptions;
 use Phalcon\Exception;
 
 
@@ -155,45 +154,18 @@ class Bootstrap
             echo 'This is crazy, but this page was not found!';
         });
         $registry = $this->diContainer->getShared('registry');
+        /** @var PhalconLogger $logger */
         $logger = $this->diContainer->getShared('logger');
 
-        ini_set(
-            'display_errors',
-            'development' === $registry->mode
-        );
-        error_reporting(E_ALL);
-
-        set_error_handler(
-            function ($errorNumber, $errorString, $errorFile, $errorLine) use ($logger) {
-                if (0 === $errorNumber & 0 === error_reporting()) {
-                    return;
-                }
-
-                $logger->error(
-                    sprintf(
-                        "[%s] [%s] %s - %s",
-                        $errorNumber,
-                        $errorLine,
-                        $errorString,
-                        $errorFile
-                    )
-                );
-            }
-        );
-
-        set_exception_handler(
-            function () use ($logger) {
-                $logger->error(json_encode(debug_backtrace()));
-            }
-        );
+        $apiExceptions = new ApiExceptions($logger, ApiExceptions::DEVELOPMENT);
+        $apiExceptions->register();
 
         register_shutdown_function(
             function () use ($logger, $registry) {
-                $memory = memory_get_usage() - $registry->memory;
-                $execution = microtime(true) - $registry->executionTime;
-
                 if ('development' === $registry->mode) {
-                    $logger->info(
+                    $memory = memory_get_usage() - $registry->memory;
+                    $execution = microtime(true) - $registry->executionTime;
+                    $logger->logMessage(
                         sprintf(
                             'Shutdown completed [%s] - [%s]',
                             $this->timeToHuman($execution),
@@ -217,28 +189,15 @@ class Bootstrap
     }
 
     /**
-     * Initializes the loggers
+     * Initializes the logger
      */
     protected function initLogger()
     {
         /** @var \Phalcon\Config $config */
         $config = $this->diContainer->getShared('config');
-        $fileName = $config->get('logger')
-            ->get('defaultFilename', 'application');
-        $format = $config->get('logger')
-            ->get('format', '[%date%][%type%] %message%');
+        $path = $config->get('logger')->toArray()['path'];
 
-        $logFile = sprintf(
-            '%s/storage/logs/%s-%s.log',
-            APP_PATH,
-            date('Ymd'),
-            $fileName
-        );
-        $formatter = new PhLoggerFormatter($format);
-        $logger = new PhFileLogger($logFile);
-        $logger->setFormatter($formatter);
-
-        $this->diContainer->setShared('logger', $logger);
+        $this->diContainer->setShared('logger', new PhalconLogger($path));
     }
 
     /**
